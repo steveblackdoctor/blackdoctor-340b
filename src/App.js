@@ -119,10 +119,14 @@ function PharmacyLookup({ lang }) {
     if (!/^\d{5}$/.test(zip)) { setError(t ? "Ingrese un código postal de 5 dígitos." : "Please enter a valid 5-digit zip code."); return; }
     setError(""); setLoading(true); setResults(null);
     try {
-      const res = await fetch(`https://340bopais.hrsa.gov/api/coveredentities/search?zipCode=${zip}&radius=25&pageSize=20&pageNumber=1`, { headers: { "Accept": "application/json" } });
-      if (!res.ok) throw new Error();
+      const res = await fetch("/api/hrsa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ zip }),
+      });
+      if (!res.ok) throw new Error("API error");
       const data = await res.json();
-      setResults({ ai: false, items: data.items || data.data || data || [] });
+      setResults({ ai: false, items: data.items || [] });
     } catch {
       try {
         const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
