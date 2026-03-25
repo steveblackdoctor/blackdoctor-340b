@@ -344,10 +344,7 @@ export default function App() {
 
         <div style={{ background: B.yellow, margin: "0 -1rem", padding: "1.25rem 1.5rem 1.25rem", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div>
-              <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 44, fontWeight: 300, color: B.black, letterSpacing: "0.05em", lineHeight: 1, display: "block" }}>BlackDoctor</span>
-              <span style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 14, color: B.black, letterSpacing: "0.08em", display: "block", marginTop: 4 }}>Where Culture Meets Care</span>
-            </div>
+            <img src="/BlackDoctor_PrimaryLogo_Black.svg" alt="BlackDoctor — Where Culture Meets Care" style={{ height: 64, display: "block", filter: "brightness(0)" }} />
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <select value={state} onChange={e => setState(e.target.value)}
