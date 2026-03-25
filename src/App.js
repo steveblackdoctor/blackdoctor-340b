@@ -128,17 +128,7 @@ function PharmacyLookup({ lang }) {
       const data = await res.json();
       setResults({ ai: false, items: data.items || [] });
     } catch {
-      try {
-        const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000,
-            system: "You are a 340B covered entity lookup assistant. Respond ONLY with a JSON array (no markdown) of up to 8 likely 340B covered entities near the given zip code. Each object: {name, type, city, state, phone, address}. type: one of FQHC, DSH, CAH, RRC, Children's Hospital.",
-            messages: [{ role: "user", content: `340B covered entities near zip ${zip}` }] })
-        });
-        const aiData = await aiRes.json();
-        const text = aiData.content?.map(b => b.text || "").join("") || "[]";
-        setResults({ ai: true, items: JSON.parse(text.replace(/```json|```/g, "").trim()) });
-      } catch { setError(t ? "No se pudo conectar. Visite hrsa.gov/opa." : "Could not connect. Visit hrsa.gov/opa to search directly."); }
+      setError(t ? "No se pudo conectar. Visite hrsa.gov/opa." : "Could not connect. Visit hrsa.gov/opa to search directly.");
     }
     setLoading(false);
   };
