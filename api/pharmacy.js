@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         if (items.length > 0) return res.status(200).json({ items, source: "hrsa" });
       }
     } else {
-      hrsaError = `HRSA ${response.status}`;
+      hrsaError = `HRSA ${response.status}: ${await response.text().then(t => t.slice(0, 200))}`;
     }
   } catch (err) { hrsaError = err.message; }
 
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     const data = await response.json();
     const text = data.content?.map(b => b.text || "").join("") || "[]";
     const items = JSON.parse(text.replace(/```json|```/g, "").trim());
-    return res.status(200).json({ items, source: "ai" });
+    return res.status(200).json({ items, source: "ai", hrsaError });
   } catch (err) {
     return res.status(500).json({ error: "Could not retrieve data", hrsaError, claudeError: err.message, items: [] });
   }
