@@ -119,17 +119,11 @@ function PharmacyLookup({ lang }) {
     if (!/^\d{5}$/.test(zip)) { setError(t ? "Ingrese un código postal de 5 dígitos." : "Please enter a valid 5-digit zip code."); return; }
     setError(""); setLoading(true); setResults(null);
     try {
-      const res = await fetch("/api/hrsa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ zip }),
-      });
-      if (!res.ok) throw new Error("API error");
+      const res = await fetch(`/api/pharmacy?zip=${zip}`);
       const data = await res.json();
-      setResults({ ai: false, items: data.items || [] });
-    } catch {
-      setError(t ? "No se pudo conectar. Visite hrsa.gov/opa." : "Could not connect. Visit hrsa.gov/opa to search directly.");
-    }
+      if (!res.ok) throw new Error(data.error || "Error");
+      setResults({ ai: data.source === "ai", items: data.items || [] });
+    } catch { setError(t ? "No se pudo conectar. Visite hrsa.gov/opa." : "Could not connect. Visit hrsa.gov/opa to search directly."); }
     setLoading(false);
   };
 
@@ -305,6 +299,7 @@ export default function App() {
   const [showPrint, setShowPrint] = useState(false);
   const [tab, setTab] = useState("chat");
   const [lang, setLang] = useState("en");
+  const [langWarning, setLangWarning] = useState(false);
   const [state, setState] = useState("");
   const bottomRef = useRef(null);
   const t = lang === "es";
@@ -320,9 +315,9 @@ export default function App() {
     setMessages(next);
     setLoading(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: buildSystem(lang), messages: next }),
+        body: JSON.stringify({ system: buildSystem(lang), messages: next }),
       });
       const data = await res.json();
       setMessages([...next, { role: "assistant", content: data.content?.map(b => b.text || "").join("") || "Sorry, no response." }]);
@@ -346,9 +341,19 @@ export default function App() {
               <option value="">{t ? "Estado" : "Select state"}</option>
               {STATES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <button className="btn-ghost" onClick={() => { setLang(l => l === "en" ? "es" : "en"); setMessages([]); }}>{t ? "English" : "Español"}</button>
+            <button className="btn-ghost" onClick={() => { if (messages.length > 0) { setLangWarning(true); } else { setLang(l => l === "en" ? "es" : "en"); } }}>{t ? "English" : "Español"}</button>
           </div>
         </div>
+
+        {langWarning && (
+          <div style={{ background: `${B.yellow}33`, border: `1px solid ${B.yellow}`, padding: "0.65rem 1rem", marginBottom: "1rem", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <span>{t ? "¿Cambiar a English? Se borrará la conversación actual." : "Switch to Español? This will clear the current conversation."}</span>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              <button className="btn-yellow" onClick={() => { setLang(l => l === "en" ? "es" : "en"); setMessages([]); setLangWarning(false); }}>{t ? "Switch" : "Cambiar"}</button>
+              <button className="btn-ghost" onClick={() => setLangWarning(false)}>{t ? "Cancel" : "Cancelar"}</button>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: "flex", gap: 0, marginBottom: "1.5rem", borderBottom: `1px solid ${B.border}` }}>
           {["chat","about","pharmacies"].map(k => (
@@ -376,7 +381,7 @@ export default function App() {
               <div style={{ marginBottom: "1.25rem" }}>
                 <p style={{ fontSize: 14, color: B.textMuted, margin: "0 0 0.75rem" }}>{t ? "Preguntas frecuentes — haga clic para comenzar:" : "Common questions — click to ask:"}</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {STARTERS[lang].map(q => <button key={q} className="chip-btn" onClick={() => send(q)}>{q}</button>)}
+                  {STARTERS[lang].map(q => <button key={q} className="chip-btn" onClick={() => send(q)} disabled={loading}>{q}</button>)}
                 </div>
               </div>
             )}
@@ -398,8 +403,9 @@ export default function App() {
             <div style={{ display: "flex", gap: 8 }}>
               <input className="input-base" value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
-                placeholder={t ? "Haga una pregunta sobre 340B..." : "Ask a question about 340B..."} />
-              <button className="btn-primary" onClick={() => send()}>{t ? "Enviar" : "Send"}</button>
+                placeholder={t ? "Haga una pregunta sobre 340B..." : "Ask a question about 340B..."}
+                disabled={loading} />
+              <button className="btn-primary" onClick={() => send()} disabled={loading}>{t ? "Enviar" : "Send"}</button>
             </div>
             {messages.length > 0 && <button onClick={() => setMessages([])} style={{ marginTop: 8, fontSize: 13, color: B.textMuted, background: "none", border: "none", cursor: "pointer" }}>{t ? "Limpiar" : "Clear conversation"}</button>}
           </div>
