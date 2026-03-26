@@ -21,8 +21,9 @@ export default async function handler(req, res) {
     });
     const data = await response.json();
     const text = data.content?.map(b => b.text || "").join("") || "[]";
-    const items = JSON.parse(text.replace(/```json|```/g, "").trim());
-    return res.status(200).json({ items, source: "ai" });
+    let items;
+    try { items = JSON.parse(text.replace(/```json|```/g, "").trim()); } catch { items = []; }
+    return res.status(200).json({ items, source: "ai", raw: text.slice(0, 500), claudeError: data.error });
   } catch (err) {
     return res.status(500).json({ error: err.message, items: [] });
   }
